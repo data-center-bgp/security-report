@@ -8,6 +8,7 @@ import { DetailModal } from "@/components/DetailModal";
 import { TableFilters } from "@/components/TableFilters";
 import { BusinessUnitBadge } from "@/components/BusinessUnitBadge";
 import { formatDate, formatTime } from "@/lib/utils";
+import { createPortal } from "react-dom";
 import { createBrowserClient } from "@/lib/supabase";
 
 type BarangMasuk = {
@@ -93,25 +94,25 @@ function BarangMasukDetail({ row }: { row: BarangMasuk }) {
           </table>
         </div>
       )}
-      {photos.length > 0 && (
+      {photos.filter((p) => p.foto).length > 0 && (
         <div>
           <h4 className="text-sm font-semibold mb-2">Foto</h4>
           <div className="flex flex-wrap gap-2">
-            {photos.map((p, i) => (
+            {photos.filter((p) => p.foto).map((p, i) => (
               <img
                 key={i}
-                src={p.storage_url}
+                src={p.foto}
                 alt={`Foto ${i + 1}`}
                 className="h-20 w-20 object-cover rounded cursor-pointer border"
-                onClick={() => setLightboxUrl(p.storage_url)}
+                onClick={() => setLightboxUrl(p.foto)}
               />
             ))}
           </div>
         </div>
       )}
-      {lightboxUrl && (
+      {lightboxUrl && typeof document !== "undefined" && createPortal(
         <div
-          className="fixed inset-0 z-[100] bg-black/80 flex items-center justify-center"
+          className="fixed inset-0 z-[9999] bg-black/80 flex items-center justify-center cursor-pointer"
           onClick={() => setLightboxUrl(null)}
         >
           <img
@@ -119,7 +120,8 @@ function BarangMasukDetail({ row }: { row: BarangMasuk }) {
             alt="Foto besar"
             className="max-h-[90vh] max-w-[90vw] rounded"
           />
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
