@@ -67,29 +67,33 @@ function KejadianDetail({ row }: { row: FormKejadian }) {
     <div>
       <h4 className="text-sm font-semibold mb-2">Foto Kejadian</h4>
       <div className="flex flex-wrap gap-2">
-        {photos.filter((p) => p.foto).map((p, i) => (
-          <img
-            key={i}
-            src={p.foto}
-            alt={`Foto ${i + 1}`}
-            className="h-24 w-24 object-cover rounded cursor-pointer border"
-            onClick={() => setLightboxUrl(p.foto)}
-          />
-        ))}
+        {photos
+          .filter((p) => p.foto)
+          .map((p, i) => (
+            <img
+              key={i}
+              src={p.foto}
+              alt={`Foto ${i + 1}`}
+              className="h-24 w-24 object-cover rounded cursor-pointer border"
+              onClick={() => setLightboxUrl(p.foto)}
+            />
+          ))}
       </div>
-      {lightboxUrl && typeof document !== "undefined" && createPortal(
-        <div
-          className="fixed inset-0 z-[9999] bg-black/80 flex items-center justify-center cursor-pointer"
-          onClick={() => setLightboxUrl(null)}
-        >
-          <img
-            src={lightboxUrl}
-            alt="Foto besar"
-            className="max-h-[90vh] max-w-[90vw] rounded"
-          />
-        </div>,
-        document.body
-      )}
+      {lightboxUrl &&
+        typeof document !== "undefined" &&
+        createPortal(
+          <div
+            className="fixed inset-0 z-[9999] bg-black/80 flex items-center justify-center cursor-pointer"
+            onClick={() => setLightboxUrl(null)}
+          >
+            <img
+              src={lightboxUrl}
+              alt="Foto besar"
+              className="max-h-[90vh] max-w-[90vw] rounded"
+            />
+          </div>,
+          document.body,
+        )}
     </div>
   );
 }

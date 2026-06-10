@@ -101,31 +101,35 @@ function BarangKeluarDetail({ row }: { row: BarangKeluar }) {
         <div>
           <h4 className="text-sm font-semibold mb-2">Foto</h4>
           <div className="flex flex-wrap gap-2">
-            {photos.filter((p) => p.foto).map((p, i) => (
-              <img
-                key={i}
-                src={p.foto}
-                alt={`Foto ${i + 1}`}
-                className="h-20 w-20 object-cover rounded cursor-pointer border"
-                onClick={() => setLightboxUrl(p.foto)}
-              />
-            ))}
+            {photos
+              .filter((p) => p.foto)
+              .map((p, i) => (
+                <img
+                  key={i}
+                  src={p.foto}
+                  alt={`Foto ${i + 1}`}
+                  className="h-20 w-20 object-cover rounded cursor-pointer border"
+                  onClick={() => setLightboxUrl(p.foto)}
+                />
+              ))}
           </div>
         </div>
       )}
-      {lightboxUrl && typeof document !== "undefined" && createPortal(
-        <div
-          className="fixed inset-0 z-[9999] bg-black/80 flex items-center justify-center cursor-pointer"
-          onClick={() => setLightboxUrl(null)}
-        >
-          <img
-            src={lightboxUrl}
-            alt="Foto besar"
-            className="max-h-[90vh] max-w-[90vw] rounded"
-          />
-        </div>,
-        document.body
-      )}
+      {lightboxUrl &&
+        typeof document !== "undefined" &&
+        createPortal(
+          <div
+            className="fixed inset-0 z-[9999] bg-black/80 flex items-center justify-center cursor-pointer"
+            onClick={() => setLightboxUrl(null)}
+          >
+            <img
+              src={lightboxUrl}
+              alt="Foto besar"
+              className="max-h-[90vh] max-w-[90vw] rounded"
+            />
+          </div>,
+          document.body,
+        )}
     </div>
   );
 }
@@ -188,7 +192,9 @@ export default function BarangKeluarPage() {
   });
 
   const effectiveFilter = isMaster
-    ? siteFilter === "all" ? null : siteFilter
+    ? siteFilter === "all"
+      ? null
+      : siteFilter
     : businessUnitFilter;
 
   async function handleExportXlsx() {
@@ -205,12 +211,21 @@ export default function BarangKeluarPage() {
           .select("*")
           .order("tanggal", { ascending: false })
           .range(from, from + batchSize - 1);
-        if (effectiveFilter) q = (q as any).ilike("business_unit", effectiveFilter);
+        if (effectiveFilter)
+          q = (q as any).ilike("business_unit", effectiveFilter);
         if (dateFrom) q = (q as any).gte("tanggal", dateFrom);
         if (dateTo) q = (q as any).lte("tanggal", dateTo);
         if (search.trim()) {
-          const f = ["ID", "nomor_do", "kurir", "nama_pemilik_barang", "tujuan", "sekuriti"]
-            .map((c) => `${c}.ilike.%${search.trim()}%`).join(",");
+          const f = [
+            "ID",
+            "nomor_do",
+            "kurir",
+            "nama_pemilik_barang",
+            "tujuan",
+            "sekuriti",
+          ]
+            .map((c) => `${c}.ilike.%${search.trim()}%`)
+            .join(",");
           q = (q as any).or(f);
         }
         const { data: rows, error } = await q;
@@ -232,8 +247,14 @@ export default function BarangKeluarPage() {
       for (let i = 0; i < ids.length; i += 200) {
         const batch = ids.slice(i, i + 200);
         const [detailRes, photoRes] = await Promise.all([
-          supabase.from("detail_do_keluar").select("*").in("barang_keluar_id", batch),
-          supabase.from("foto_do_keluar").select("*").in("barang_keluar_id", batch),
+          supabase
+            .from("detail_do_keluar")
+            .select("*")
+            .in("barang_keluar_id", batch),
+          supabase
+            .from("foto_do_keluar")
+            .select("*")
+            .in("barang_keluar_id", batch),
         ]);
         if (detailRes.data) allDetails = [...allDetails, ...detailRes.data];
         if (photoRes.data) allPhotos = [...allPhotos, ...photoRes.data];
@@ -244,14 +265,45 @@ export default function BarangKeluarPage() {
       const doMap = Object.fromEntries(allRows.map((r) => [r.id, r]));
 
       const ws1 = XLSX.utils.aoa_to_sheet([
-        ["ID", "Nomor DO", "Tanggal", "Jam", "Kurir", "Pemilik", "Tujuan", "Keterangan", "Sekuriti", "Pos", "Site"],
-        ...allRows.map((r) => [r.ID, r.nomor_do, r.tanggal, r.jam, r.kurir, r.nama_pemilik_barang, r.tujuan, r.keterangan, r.sekuriti, r.pos, r.business_unit]),
+        [
+          "ID",
+          "Nomor DO",
+          "Tanggal",
+          "Jam",
+          "Kurir",
+          "Pemilik",
+          "Tujuan",
+          "Keterangan",
+          "Sekuriti",
+          "Pos",
+          "Site",
+        ],
+        ...allRows.map((r) => [
+          r.ID,
+          r.nomor_do,
+          r.tanggal,
+          r.jam,
+          r.kurir,
+          r.nama_pemilik_barang,
+          r.tujuan,
+          r.keterangan,
+          r.sekuriti,
+          r.pos,
+          r.business_unit,
+        ]),
       ]);
       XLSX.utils.book_append_sheet(wb, ws1, "DO Keluar");
 
       if (allDetails.length > 0) {
         const ws2 = XLSX.utils.aoa_to_sheet([
-          ["ID DO", "Nomor DO", "Serial Number", "Nama Barang", "Jumlah", "Satuan"],
+          [
+            "ID DO",
+            "Nomor DO",
+            "Serial Number",
+            "Nama Barang",
+            "Jumlah",
+            "Satuan",
+          ],
           ...allDetails.map((d) => [
             doMap[d.barang_keluar_id]?.ID ?? "",
             doMap[d.barang_keluar_id]?.nomor_do ?? "",
