@@ -10,6 +10,7 @@ import { BusinessUnitBadge } from "@/components/BusinessUnitBadge";
 import { formatDate, formatTime } from "@/lib/utils";
 import { createPortal } from "react-dom";
 import { createBrowserClient } from "@/lib/supabase";
+import { toast } from "sonner";
 
 type BarangKeluar = {
   id: string;
@@ -150,6 +151,7 @@ const detailFields = [
 export default function BarangKeluarPage() {
   const { isMaster, businessUnitFilter, loading: authLoading } = useAuth();
   const [selected, setSelected] = useState<BarangKeluar | null>(null);
+  const [exporting, setExporting] = useState(false);
 
   const {
     data,
@@ -185,6 +187,107 @@ export default function BarangKeluarPage() {
     authLoading,
   });
 
+  const effectiveFilter = isMaster
+    ? siteFilter === "all" ? null : siteFilter
+    : businessUnitFilter;
+
+  async function handleExportXlsx() {
+    setExporting(true);
+    const toastId = toast.loading("Sedang mengekspor data...");
+    try {
+      const supabase = createBrowserClient();
+      const batchSize = 1000;
+      let allRows: BarangKeluar[] = [];
+      let from = 0;
+      while (true) {
+        let q = supabase
+          .from("barang_keluar")
+          .select("*")
+          .order("tanggal", { ascending: false })
+          .range(from, from + batchSize - 1);
+        if (effectiveFilter) q = (q as any).ilike("business_unit", effectiveFilter);
+        if (dateFrom) q = (q as any).gte("tanggal", dateFrom);
+        if (dateTo) q = (q as any).lte("tanggal", dateTo);
+        if (search.trim()) {
+          const f = ["ID", "nomor_do", "kurir", "nama_pemilik_barang", "tujuan", "sekuriti"]
+            .map((c) => `${c}.ilike.%${search.trim()}%`).join(",");
+          q = (q as any).or(f);
+        }
+        const { data: rows, error } = await q;
+        if (error || !rows || rows.length === 0) break;
+        allRows = [...allRows, ...(rows as BarangKeluar[])];
+        if (rows.length < batchSize) break;
+        from += batchSize;
+      }
+
+      if (allRows.length === 0) {
+        toast.dismiss(toastId);
+        toast.info("Tidak ada data untuk diekspor");
+        return;
+      }
+
+      const ids = allRows.map((r) => r.id);
+      let allDetails: any[] = [];
+      let allPhotos: any[] = [];
+      for (let i = 0; i < ids.length; i += 200) {
+        const batch = ids.slice(i, i + 200);
+        const [detailRes, photoRes] = await Promise.all([
+          supabase.from("detail_do_keluar").select("*").in("barang_keluar_id", batch),
+          supabase.from("foto_do_keluar").select("*").in("barang_keluar_id", batch),
+        ]);
+        if (detailRes.data) allDetails = [...allDetails, ...detailRes.data];
+        if (photoRes.data) allPhotos = [...allPhotos, ...photoRes.data];
+      }
+
+      const XLSX = await import("xlsx");
+      const wb = XLSX.utils.book_new();
+      const doMap = Object.fromEntries(allRows.map((r) => [r.id, r]));
+
+      const ws1 = XLSX.utils.aoa_to_sheet([
+        ["ID", "Nomor DO", "Tanggal", "Jam", "Kurir", "Pemilik", "Tujuan", "Keterangan", "Sekuriti", "Pos", "Site"],
+        ...allRows.map((r) => [r.ID, r.nomor_do, r.tanggal, r.jam, r.kurir, r.nama_pemilik_barang, r.tujuan, r.keterangan, r.sekuriti, r.pos, r.business_unit]),
+      ]);
+      XLSX.utils.book_append_sheet(wb, ws1, "DO Keluar");
+
+      if (allDetails.length > 0) {
+        const ws2 = XLSX.utils.aoa_to_sheet([
+          ["ID DO", "Nomor DO", "Serial Number", "Nama Barang", "Jumlah", "Satuan"],
+          ...allDetails.map((d) => [
+            doMap[d.barang_keluar_id]?.ID ?? "",
+            doMap[d.barang_keluar_id]?.nomor_do ?? "",
+            d.serial_number ?? "",
+            d.nama_barang ?? "",
+            d.jumlah ?? "",
+            d.satuan ?? "",
+          ]),
+        ]);
+        XLSX.utils.book_append_sheet(wb, ws2, "Detail Item");
+      }
+
+      const validPhotos = allPhotos.filter((p) => p.foto);
+      if (validPhotos.length > 0) {
+        const ws3 = XLSX.utils.aoa_to_sheet([
+          ["ID DO", "Nomor DO", "URL Foto"],
+          ...validPhotos.map((p) => [
+            doMap[p.barang_keluar_id]?.ID ?? "",
+            doMap[p.barang_keluar_id]?.nomor_do ?? "",
+            p.foto,
+          ]),
+        ]);
+        XLSX.utils.book_append_sheet(wb, ws3, "Foto");
+      }
+
+      XLSX.writeFile(wb, "do-keluar-lengkap.xlsx");
+      toast.dismiss(toastId);
+      toast.success(`Berhasil mengekspor ${allRows.length} data`);
+    } catch {
+      toast.dismiss(toastId);
+      toast.error("Gagal mengekspor data");
+    } finally {
+      setExporting(false);
+    }
+  }
+
   return (
     <div className="space-y-6">
       <div>
@@ -208,6 +311,7 @@ export default function BarangKeluarPage() {
         onSort={handleSort}
         onRowClick={setSelected}
         exportFilename="do-keluar"
+        onExportXlsx={handleExportXlsx}
         filterSlot={
           <TableFilters
             dateFrom={dateFrom}

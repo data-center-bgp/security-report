@@ -49,6 +49,7 @@ interface DataTableProps<T extends Record<string, any>> {
   onRowClick?: (row: T) => void;
   exportFilename?: string;
   filterSlot?: React.ReactNode;
+  onExportXlsx?: () => void;
 }
 
 function exportToCsv<T extends Record<string, any>>(
@@ -110,6 +111,7 @@ export function DataTable<T extends Record<string, any>>({
   onRowClick,
   exportFilename = "export",
   filterSlot,
+  onExportXlsx,
 }: DataTableProps<T>) {
   const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
   const [exportOpen, setExportOpen] = useState(false);
@@ -191,7 +193,11 @@ export function DataTable<T extends Record<string, any>>({
               <button
                 className="flex w-full items-center gap-2 px-3 py-2 text-sm hover:bg-accent transition-colors"
                 onClick={() => {
-                  exportToXlsx(columns, data, exportFilename);
+                  if (onExportXlsx) {
+                    onExportXlsx();
+                  } else {
+                    exportToXlsx(columns, data, exportFilename);
+                  }
                   setExportOpen(false);
                 }}
               >

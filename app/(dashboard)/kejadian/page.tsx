@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { Camera } from "lucide-react";
 import { useAuth } from "@/components/AuthProvider";
 import { useTableData } from "@/hooks/useTableData";
@@ -60,25 +61,25 @@ function KejadianDetail({ row }: { row: FormKejadian }) {
       .then(({ data }) => setPhotos(data ?? []));
   }, [row?.id]);
 
-  if (photos.length === 0) return null;
+  if (photos.filter((p) => p.foto).length === 0) return null;
 
   return (
     <div>
       <h4 className="text-sm font-semibold mb-2">Foto Kejadian</h4>
       <div className="flex flex-wrap gap-2">
-        {photos.map((p, i) => (
+        {photos.filter((p) => p.foto).map((p, i) => (
           <img
             key={i}
-            src={p.storage_url}
+            src={p.foto}
             alt={`Foto ${i + 1}`}
             className="h-24 w-24 object-cover rounded cursor-pointer border"
-            onClick={() => setLightboxUrl(p.storage_url)}
+            onClick={() => setLightboxUrl(p.foto)}
           />
         ))}
       </div>
-      {lightboxUrl && (
+      {lightboxUrl && typeof document !== "undefined" && createPortal(
         <div
-          className="fixed inset-0 z-[100] bg-black/80 flex items-center justify-center"
+          className="fixed inset-0 z-[9999] bg-black/80 flex items-center justify-center cursor-pointer"
           onClick={() => setLightboxUrl(null)}
         >
           <img
@@ -86,7 +87,8 @@ function KejadianDetail({ row }: { row: FormKejadian }) {
             alt="Foto besar"
             className="max-h-[90vh] max-w-[90vw] rounded"
           />
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
