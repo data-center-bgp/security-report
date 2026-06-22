@@ -107,6 +107,15 @@ export function useTableData<T extends Record<string, any>>({
     fetchData();
   }, [fetchData]);
 
+  // Auto-refresh every 30 seconds
+  useEffect(() => {
+    if (authLoading) return;
+    const interval = setInterval(() => {
+      fetchData();
+    }, 30_000);
+    return () => clearInterval(interval);
+  }, [authLoading, fetchData]);
+
   function handleSort(key: string) {
     if (key === sortKey) {
       setSortDir((d) => (d === "asc" ? "desc" : "asc"));
