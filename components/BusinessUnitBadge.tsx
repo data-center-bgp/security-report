@@ -22,7 +22,8 @@ export function BusinessUnitBadge({ value }: BusinessUnitBadgeProps) {
 
   const key = value.toLowerCase();
   const colorClass =
-    colorMap[key] ?? "bg-slate-100 text-slate-800 border-slate-200";
+    colorMap[key] ??
+    "bg-slate-100 text-slate-800 border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-600";
   const label = labelMap[key] ?? value.charAt(0).toUpperCase() + value.slice(1);
 
   return (

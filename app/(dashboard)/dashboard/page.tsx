@@ -469,7 +469,7 @@ export default function DashboardPage() {
             value={counts.orang_keluar}
             icon={UserMinus}
             loading={loading}
-            colorClass="text-slate-600"
+            colorClass="text-muted-foreground"
           />
           <StatCard
             title="DO Masuk"

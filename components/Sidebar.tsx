@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
+import { useTheme } from "next-themes";
 import {
   LayoutDashboard,
   Users,
@@ -22,6 +23,8 @@ import {
   X,
   PanelLeftClose,
   PanelLeftOpen,
+  Sun,
+  Moon,
 } from "lucide-react";
 import { createBrowserClient } from "@/lib/supabase";
 import { useAuth } from "@/components/AuthProvider";
@@ -73,6 +76,7 @@ function SidebarContent({
   const pathname = usePathname();
   const router = useRouter();
   const { profile } = useAuth();
+  const { theme, setTheme } = useTheme();
   const supabase = createBrowserClient();
 
   async function handleSignOut() {
@@ -187,6 +191,21 @@ function SidebarContent({
             </div>
           </div>
         )}
+        <button
+          onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+          title={theme === "dark" ? "Mode Terang" : "Mode Gelap"}
+          className={cn(
+            "w-full flex items-center rounded-md text-sm font-medium text-muted-foreground hover:bg-accent hover:text-foreground transition-colors py-2",
+            collapsed ? "justify-center px-2" : "gap-2 px-3",
+          )}
+        >
+          {theme === "dark" ? (
+            <Sun className="h-4 w-4 shrink-0" />
+          ) : (
+            <Moon className="h-4 w-4 shrink-0" />
+          )}
+          {!collapsed && (theme === "dark" ? "Mode Terang" : "Mode Gelap")}
+        </button>
         <button
           onClick={handleSignOut}
           title={collapsed ? "Sign Out" : undefined}
