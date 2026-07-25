@@ -107,6 +107,7 @@ export default function BunkerPage() {
     siteFilter,
     setSiteFilter,
     PAGE_SIZE,
+    fetchAllRows,
   } = useTableData<BunkerFreshwater>({
     table: "laporan_bunker_freshwater",
     columns: "*",
@@ -139,6 +140,7 @@ export default function BunkerPage() {
         onSort={handleSort}
         onRowClick={setSelected}
         exportFilename="bunker-freshwater"
+        fetchAllRows={fetchAllRows}
         filterSlot={
           <TableFilters
             dateFrom={dateFrom}

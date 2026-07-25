@@ -83,6 +83,7 @@ export default function TravoBlowerPage() {
     siteFilter,
     setSiteFilter,
     PAGE_SIZE,
+    fetchAllRows,
   } = useTableData<TravoBlower>({
     table: "laporan_travo_blower",
     columns: "*",
@@ -115,6 +116,7 @@ export default function TravoBlowerPage() {
         onSort={handleSort}
         onRowClick={setSelected}
         exportFilename="travo-blower"
+        fetchAllRows={fetchAllRows}
         filterSlot={
           <TableFilters
             dateFrom={dateFrom}

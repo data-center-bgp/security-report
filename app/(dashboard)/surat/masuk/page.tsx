@@ -83,6 +83,7 @@ export default function SuratMasukPage() {
     siteFilter,
     setSiteFilter,
     PAGE_SIZE,
+    fetchAllRows,
   } = useTableData<SuratMasuk>({
     table: "surat_masuk",
     columns: "*",
@@ -121,6 +122,7 @@ export default function SuratMasukPage() {
         onSort={handleSort}
         onRowClick={setSelected}
         exportFilename="surat-masuk"
+        fetchAllRows={fetchAllRows}
         filterSlot={
           <TableFilters
             dateFrom={dateFrom}

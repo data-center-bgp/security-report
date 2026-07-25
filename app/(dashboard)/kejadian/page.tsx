@@ -134,6 +134,7 @@ export default function FormKejadianPage() {
     siteFilter,
     setSiteFilter,
     PAGE_SIZE,
+    fetchAllRows,
   } = useTableData<FormKejadian>({
     table: "form_kejadian",
     columns: "*",
@@ -166,6 +167,7 @@ export default function FormKejadianPage() {
         onSort={handleSort}
         onRowClick={setSelected}
         exportFilename="form-kejadian"
+        fetchAllRows={fetchAllRows}
         filterSlot={
           <TableFilters
             dateFrom={dateFrom}
