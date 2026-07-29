@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { createPortal } from "react-dom";
 import { useAuth } from "@/components/AuthProvider";
 import { useTableData } from "@/hooks/useTableData";
 import { DataTable, type ColumnDef } from "@/components/DataTable";
@@ -8,6 +9,7 @@ import { DetailModal } from "@/components/DetailModal";
 import { TableFilters } from "@/components/TableFilters";
 import { BusinessUnitBadge } from "@/components/BusinessUnitBadge";
 import { formatDate, formatTime } from "@/lib/utils";
+import { ImageOff } from "lucide-react";
 
 type LaporanTambat = {
   id: string;
@@ -25,32 +27,9 @@ type LaporanTambat = {
   waktu_selesai_connect: string;
   lokasi: string;
   sekuriti: string;
+  evidence: string | null;
   business_unit: string;
 };
-
-const columns: ColumnDef<LaporanTambat>[] = [
-  { key: "ID", label: "ID", sortable: true },
-  { key: "nama_kapal", label: "Kapal", sortable: true },
-  { key: "nama_perusahaan", label: "Perusahaan" },
-  {
-    key: "tanggal_mulai_tambat",
-    label: "Tgl Mulai Tambat",
-    render: (r) => formatDate(r.tanggal_mulai_tambat),
-  },
-  {
-    key: "tanggal_selesai_tambat",
-    label: "Tgl Selesai Tambat",
-    render: (r) => formatDate(r.tanggal_selesai_tambat),
-  },
-  { key: "kegiatan", label: "Kegiatan" },
-  { key: "lokasi", label: "Lokasi" },
-  { key: "sekuriti", label: "Sekuriti" },
-  {
-    key: "business_unit",
-    label: "Site",
-    render: (r) => <BusinessUnitBadge value={r.business_unit} />,
-  },
-];
 
 const detailFields = [
   { key: "ID", label: "ID" },
@@ -109,6 +88,49 @@ const detailFields = [
 export default function TambatPage() {
   const { isMaster, businessUnitFilter, loading: authLoading } = useAuth();
   const [selected, setSelected] = useState<LaporanTambat | null>(null);
+  const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
+
+  const columns: ColumnDef<LaporanTambat>[] = [
+    { key: "ID", label: "ID", sortable: true },
+    { key: "nama_kapal", label: "Kapal", sortable: true },
+    { key: "nama_perusahaan", label: "Perusahaan" },
+    {
+      key: "tanggal_mulai_tambat",
+      label: "Tgl Mulai Tambat",
+      render: (r) => formatDate(r.tanggal_mulai_tambat),
+    },
+    {
+      key: "tanggal_selesai_tambat",
+      label: "Tgl Selesai Tambat",
+      render: (r) => formatDate(r.tanggal_selesai_tambat),
+    },
+    { key: "kegiatan", label: "Kegiatan" },
+    { key: "lokasi", label: "Lokasi" },
+    { key: "sekuriti", label: "Sekuriti" },
+    {
+      key: "evidence",
+      label: "Evidence",
+      render: (r) =>
+        r.evidence ? (
+          <img
+            src={r.evidence}
+            alt="Evidence"
+            className="h-9 w-9 object-cover rounded border cursor-pointer"
+            onClick={(e) => {
+              e.stopPropagation();
+              setLightboxUrl(r.evidence);
+            }}
+          />
+        ) : (
+          <span className="text-muted-foreground text-xs">-</span>
+        ),
+    },
+    {
+      key: "business_unit",
+      label: "Site",
+      render: (r) => <BusinessUnitBadge value={r.business_unit} />,
+    },
+  ];
 
   const {
     data,
@@ -187,7 +209,42 @@ export default function TambatPage() {
         title="Detail Tambat"
         row={selected}
         fields={detailFields}
+        extraContent={
+          <div>
+            <h4 className="text-sm font-semibold mb-2">Evidence</h4>
+            {selected?.evidence ? (
+              <img
+                src={selected.evidence}
+                alt="Evidence"
+                className="h-40 w-40 object-cover rounded border cursor-pointer"
+                onClick={() => setLightboxUrl(selected.evidence)}
+              />
+            ) : (
+              <div className="h-40 w-40 rounded border border-dashed flex flex-col items-center justify-center gap-1.5 text-muted-foreground bg-muted/30">
+                <ImageOff className="h-6 w-6" />
+                <span className="text-xs">Belum ada foto</span>
+              </div>
+            )}
+          </div>
+        }
       />
+
+      {/* Lightbox foto */}
+      {lightboxUrl &&
+        typeof document !== "undefined" &&
+        createPortal(
+          <div
+            className="fixed inset-0 z-[9999] bg-black/80 flex items-center justify-center cursor-pointer"
+            onClick={() => setLightboxUrl(null)}
+          >
+            <img
+              src={lightboxUrl}
+              alt="Evidence"
+              className="max-h-[90vh] max-w-[90vw] rounded"
+            />
+          </div>,
+          document.body,
+        )}
     </div>
   );
 }
