@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useTheme } from "next-themes";
 import {
   LayoutDashboard,
@@ -17,6 +17,8 @@ import {
   Fuel,
   Zap,
   Anchor,
+  Database,
+  UserCog,
   LogOut,
   ShieldCheck,
   Menu,
@@ -62,6 +64,17 @@ const navGroups = [
   },
 ];
 
+// business_unit yang boleh melihat menu Master Data
+const MASTER_ALLOWED_UNITS = ["master", "tst", "shipyard", "shorebase"];
+
+const masterGroup = {
+  label: "Master Data",
+  items: [
+    { href: "/master/travo-blower", label: "Travo / Blower", icon: Database },
+    { href: "/master/security", label: "Nama Security", icon: UserCog },
+  ],
+};
+
 interface SidebarContentProps {
   collapsed?: boolean;
   onClose?: () => void;
@@ -78,6 +91,16 @@ function SidebarContent({
   const { profile } = useAuth();
   const { theme, setTheme } = useTheme();
   const supabase = createBrowserClient();
+
+  // Hindari hydration mismatch: tema baru diketahui setelah mount di klien.
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+  const isDark = mounted && theme === "dark";
+
+  const canAccessMaster = MASTER_ALLOWED_UNITS.includes(
+    (profile?.business_unit ?? "").toLowerCase(),
+  );
+  const groups = canAccessMaster ? [...navGroups, masterGroup] : navGroups;
 
   async function handleSignOut() {
     await supabase.auth.signOut();
@@ -126,7 +149,7 @@ function SidebarContent({
 
       {/* Nav */}
       <nav className="flex-1 overflow-y-auto overflow-x-hidden px-2 py-4 space-y-4">
-        {navGroups.map((group, gi) => (
+        {groups.map((group, gi) => (
           <div key={gi}>
             {group.label && !collapsed && (
               <p className="px-2 mb-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
@@ -192,19 +215,19 @@ function SidebarContent({
           </div>
         )}
         <button
-          onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-          title={theme === "dark" ? "Mode Terang" : "Mode Gelap"}
+          onClick={() => setTheme(isDark ? "light" : "dark")}
+          title={isDark ? "Mode Terang" : "Mode Gelap"}
           className={cn(
             "w-full flex items-center rounded-md text-sm font-medium text-muted-foreground hover:bg-accent hover:text-foreground transition-colors py-2",
             collapsed ? "justify-center px-2" : "gap-2 px-3",
           )}
         >
-          {theme === "dark" ? (
+          {isDark ? (
             <Sun className="h-4 w-4 shrink-0" />
           ) : (
             <Moon className="h-4 w-4 shrink-0" />
           )}
-          {!collapsed && (theme === "dark" ? "Mode Terang" : "Mode Gelap")}
+          {!collapsed && (isDark ? "Mode Terang" : "Mode Gelap")}
         </button>
         <button
           onClick={handleSignOut}

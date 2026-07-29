@@ -35,7 +35,8 @@ export async function middleware(req: NextRequest) {
     req.nextUrl.pathname.startsWith("/orang") ||
     req.nextUrl.pathname.startsWith("/surat") ||
     req.nextUrl.pathname.startsWith("/kejadian") ||
-    req.nextUrl.pathname.startsWith("/laporan");
+    req.nextUrl.pathname.startsWith("/laporan") ||
+    req.nextUrl.pathname.startsWith("/master");
 
   if (!session && isDashboard) {
     return NextResponse.redirect(new URL("/login", req.url));
