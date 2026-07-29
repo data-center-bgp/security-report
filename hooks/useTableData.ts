@@ -52,9 +52,12 @@ export function useTableData<T extends Record<string, any>>({
       : siteFilter
     : businessUnitFilter;
 
-  const fetchData = useCallback(async () => {
+  const fetchData = useCallback(async (opts?: { silent?: boolean }) => {
     if (authLoading) return;
-    setLoading(true);
+    // Refresh latar (interval 30 dtk) berjalan diam-diam: jangan tampilkan
+    // skeleton agar tabel tidak "berkedip". Skeleton hanya untuk load awal
+    // / perubahan filter.
+    if (!opts?.silent) setLoading(true);
 
     const from = (page - 1) * PAGE_SIZE;
     const to = from + PAGE_SIZE - 1;
@@ -111,7 +114,7 @@ export function useTableData<T extends Record<string, any>>({
   useEffect(() => {
     if (authLoading) return;
     const interval = setInterval(() => {
-      fetchData();
+      fetchData({ silent: true });
     }, 30_000);
     return () => clearInterval(interval);
   }, [authLoading, fetchData]);
