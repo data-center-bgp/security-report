@@ -102,7 +102,7 @@ create table if not exists public.travo_blower_checks (
     references public.master_travo_blower (id) on delete cascade,
   tanggal                date not null default current_date,
   jam                    time,                       -- diisi otomatis oleh mobile
-  kondisi                text not null check (kondisi in ('ok', 'tidak')),
+  kondisi                text not null check (kondisi in ('nyala', 'mati')),
   sekuriti               text not null,              -- petugas (dropdown dari pic_security)
   keterangan             text,                       -- opsional
   foto                   text,                       -- opsional (URL foto kondisi)
@@ -243,7 +243,7 @@ alter table public.laporan_tambat
 --   insert into public.travo_blower_checks
 --     (master_travo_blower_id, tanggal, jam, kondisi, sekuriti, keterangan, foto)
 --   values
---     ('<uuid-unit>', current_date, '08:30', 'ok', 'Budi', null, null)
+--     ('<uuid-unit>', current_date, '08:30', 'nyala', 'Budi', null, null)
 --   on conflict (master_travo_blower_id, tanggal)
 --   do update set
 --     jam        = excluded.jam,

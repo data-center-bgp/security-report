@@ -44,7 +44,7 @@ type Check = {
   master_travo_blower_id: string;
   tanggal: string;
   jam: string | null;
-  kondisi: "ok" | "tidak";
+  kondisi: "nyala" | "mati";
   sekuriti: string | null;
   keterangan: string | null;
   foto: string | null;
@@ -164,7 +164,7 @@ export default function TravoBlowerMonitoringPage() {
     const total = units.length;
     const checked = units.filter((u) => checksByUnit[u.id]).length;
     const bermasalah = units.filter(
-      (u) => checksByUnit[u.id]?.kondisi === "tidak",
+      (u) => checksByUnit[u.id]?.kondisi === "mati",
     ).length;
     return { total, checked, belum: total - checked, bermasalah };
   }, [units, checksByUnit]);
@@ -320,12 +320,12 @@ export default function TravoBlowerMonitoringPage() {
                   <TableCell>
                     {!check ? (
                       <span className="text-muted-foreground">-</span>
-                    ) : check.kondisi === "ok" ? (
+                    ) : check.kondisi === "nyala" ? (
                       <Badge className="bg-green-100 text-green-800 border-green-200 dark:bg-green-900/30 dark:text-green-300 dark:border-green-800">
-                        OK
+                        Nyala
                       </Badge>
                     ) : (
-                      <Badge variant="destructive">Tidak OK</Badge>
+                      <Badge variant="destructive">Mati</Badge>
                     )}
                   </TableCell>
                   <TableCell>{check?.sekuriti ?? "-"}</TableCell>
