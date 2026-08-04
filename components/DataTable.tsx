@@ -25,6 +25,8 @@ import {
 } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
 import { NativeSelect } from "@/components/ui/select";
+import { downloadCsv, downloadXlsx } from "@/lib/exportHandler";
+import { toast } from "sonner";
 
 export interface ColumnDef<T> {
   key: string;
@@ -40,7 +42,7 @@ interface DataTableProps<T extends Record<string, any>> {
   loading?: boolean;
   page: number;
   onPageChange: (page: number) => void;
-  pageSize?: number;
+  pageSize: number;
   search: string;
   onSearchChange: (v: string) => void;
   sortKey?: string;
@@ -49,51 +51,14 @@ interface DataTableProps<T extends Record<string, any>> {
   onRowClick?: (row: T) => void;
   exportFilename?: string;
   filterSlot?: React.ReactNode;
+  /** Fetches every row matching the current filters, ignoring pagination. Used as
+   * the default source for both CSV and XLSX export so "Export" doesn't silently
+   * only cover the visible page. */
+  fetchAllRows?: () => Promise<T[]>;
+  /** Full override for the XLSX export (e.g. a page that builds a multi-sheet
+   * workbook with joined child data). Takes priority over fetchAllRows. */
   onExportXlsx?: () => void;
 }
-
-function exportToCsv<T extends Record<string, any>>(
-  columns: ColumnDef<T>[],
-  data: T[],
-  filename: string,
-) {
-  const header = columns.map((c) => c.label).join(",");
-  const rows = data.map((row) =>
-    columns
-      .map((c) => {
-        const val = row[c.key] ?? "";
-        const str = String(val).replace(/"/g, '""');
-        return `"${str}"`;
-      })
-      .join(","),
-  );
-  const csv = [header, ...rows].join("\n");
-  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = `${filename}.csv`;
-  link.click();
-  URL.revokeObjectURL(url);
-}
-
-async function exportToXlsx<T extends Record<string, any>>(
-  columns: ColumnDef<T>[],
-  data: T[],
-  filename: string,
-) {
-  const XLSX = await import("xlsx");
-  const wsData = [
-    columns.map((c) => c.label),
-    ...data.map((row) => columns.map((c) => row[c.key] ?? "")),
-  ];
-  const ws = XLSX.utils.aoa_to_sheet(wsData);
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, "Data");
-  XLSX.writeFile(wb, `${filename}.xlsx`);
-}
-
-const PAGE_SIZE_DEFAULT = 20;
 
 export function DataTable<T extends Record<string, any>>({
   columns,
@@ -102,7 +67,7 @@ export function DataTable<T extends Record<string, any>>({
   loading = false,
   page,
   onPageChange,
-  pageSize = PAGE_SIZE_DEFAULT,
+  pageSize,
   search,
   onSearchChange,
   sortKey,
@@ -111,11 +76,39 @@ export function DataTable<T extends Record<string, any>>({
   onRowClick,
   exportFilename = "export",
   filterSlot,
+  fetchAllRows,
   onExportXlsx,
 }: DataTableProps<T>) {
   const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
   const [exportOpen, setExportOpen] = useState(false);
+  const [exportingAll, setExportingAll] = useState(false);
   const exportRef = useRef<HTMLDivElement>(null);
+
+  async function resolveExportRows(): Promise<T[]> {
+    if (!fetchAllRows) return data;
+    setExportingAll(true);
+    const toastId = toast.loading("Menyiapkan data untuk diekspor...");
+    try {
+      return await fetchAllRows();
+    } finally {
+      toast.dismiss(toastId);
+      setExportingAll(false);
+    }
+  }
+
+  async function handleExportCsv() {
+    const rows = await resolveExportRows();
+    downloadCsv(columns, rows, exportFilename);
+  }
+
+  async function handleExportXlsxClick() {
+    if (onExportXlsx) {
+      onExportXlsx();
+      return;
+    }
+    const rows = await resolveExportRows();
+    await downloadXlsx(columns, rows, exportFilename);
+  }
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -171,7 +164,7 @@ export function DataTable<T extends Record<string, any>>({
         <div className="relative" ref={exportRef}>
           <button
             onClick={() => setExportOpen((v) => !v)}
-            disabled={data.length === 0}
+            disabled={data.length === 0 || exportingAll}
             className="inline-flex items-center gap-1.5 rounded-md border border-input bg-background px-3 py-1.5 text-sm font-medium shadow-sm hover:bg-accent disabled:opacity-50 disabled:pointer-events-none transition-colors"
           >
             <Download className="h-4 w-4" />
@@ -183,8 +176,8 @@ export function DataTable<T extends Record<string, any>>({
               <button
                 className="flex w-full items-center gap-2 px-3 py-2 text-sm hover:bg-accent transition-colors"
                 onClick={() => {
-                  exportToCsv(columns, data, exportFilename);
                   setExportOpen(false);
+                  handleExportCsv();
                 }}
               >
                 <FileText className="h-4 w-4 text-muted-foreground" />
@@ -193,12 +186,8 @@ export function DataTable<T extends Record<string, any>>({
               <button
                 className="flex w-full items-center gap-2 px-3 py-2 text-sm hover:bg-accent transition-colors"
                 onClick={() => {
-                  if (onExportXlsx) {
-                    onExportXlsx();
-                  } else {
-                    exportToXlsx(columns, data, exportFilename);
-                  }
                   setExportOpen(false);
+                  handleExportXlsxClick();
                 }}
               >
                 <FileSpreadsheet className="h-4 w-4 text-green-600" />

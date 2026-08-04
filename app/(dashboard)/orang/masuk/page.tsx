@@ -82,6 +82,7 @@ export default function OrangMasukPage() {
     siteFilter,
     setSiteFilter,
     PAGE_SIZE,
+    fetchAllRows,
   } = useTableData<OrangMasuk>({
     table: "orang_masuk",
     columns: "*",
@@ -114,6 +115,7 @@ export default function OrangMasukPage() {
         onSort={handleSort}
         onRowClick={setSelected}
         exportFilename="orang-masuk"
+        fetchAllRows={fetchAllRows}
         filterSlot={
           <TableFilters
             dateFrom={dateFrom}

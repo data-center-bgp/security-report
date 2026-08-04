@@ -48,3 +48,6 @@ next-env.d.ts
 
 # PM2 (if you add ecosystem config with secrets)
 ecosystem.config.js
+
+# Claude Code local session settings (not shared)
+.claude/settings.local.json

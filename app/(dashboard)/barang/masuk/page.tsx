@@ -172,6 +172,7 @@ export default function BarangMasukPage() {
     siteFilter,
     setSiteFilter,
     PAGE_SIZE,
+    fetchAllRows,
   } = useTableData<BarangMasuk>({
     table: "barang_masuk",
     columns: "*",
@@ -187,48 +188,12 @@ export default function BarangMasukPage() {
     authLoading,
   });
 
-  const effectiveFilter = isMaster
-    ? siteFilter === "all"
-      ? null
-      : siteFilter
-    : businessUnitFilter;
-
   async function handleExportXlsx() {
     setExporting(true);
     const toastId = toast.loading("Sedang mengekspor data...");
     try {
       const supabase = createBrowserClient();
-      const batchSize = 1000;
-      let allRows: BarangMasuk[] = [];
-      let from = 0;
-      while (true) {
-        let q = supabase
-          .from("barang_masuk")
-          .select("*")
-          .order("tanggal", { ascending: false })
-          .range(from, from + batchSize - 1);
-        if (effectiveFilter)
-          q = (q as any).ilike("business_unit", effectiveFilter);
-        if (dateFrom) q = (q as any).gte("tanggal", dateFrom);
-        if (dateTo) q = (q as any).lte("tanggal", dateTo);
-        if (search.trim()) {
-          const f = [
-            "ID",
-            "nomor_do",
-            "nama_pembawa_barang",
-            "nama_pemilik_barang",
-            "sekuriti",
-          ]
-            .map((c) => `${c}.ilike.%${search.trim()}%`)
-            .join(",");
-          q = (q as any).or(f);
-        }
-        const { data: rows, error } = await q;
-        if (error || !rows || rows.length === 0) break;
-        allRows = [...allRows, ...(rows as BarangMasuk[])];
-        if (rows.length < batchSize) break;
-        from += batchSize;
-      }
+      const allRows = await fetchAllRows();
 
       if (allRows.length === 0) {
         toast.dismiss(toastId);
@@ -356,6 +321,7 @@ export default function BarangMasukPage() {
         onSort={handleSort}
         onRowClick={setSelected}
         exportFilename="do-masuk"
+        fetchAllRows={fetchAllRows}
         onExportXlsx={handleExportXlsx}
         filterSlot={
           <TableFilters

@@ -91,6 +91,7 @@ export default function FuelPage() {
     siteFilter,
     setSiteFilter,
     PAGE_SIZE,
+    fetchAllRows,
   } = useTableData<MobilTangkiFuel>({
     table: "laporan_mobil_tangki_fuel",
     columns: "*",
@@ -130,6 +131,7 @@ export default function FuelPage() {
         onSort={handleSort}
         onRowClick={setSelected}
         exportFilename="mobil-tangki-fuel"
+        fetchAllRows={fetchAllRows}
         filterSlot={
           <TableFilters
             dateFrom={dateFrom}

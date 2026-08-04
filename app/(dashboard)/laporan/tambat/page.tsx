@@ -150,6 +150,7 @@ export default function TambatPage() {
     siteFilter,
     setSiteFilter,
     PAGE_SIZE,
+    fetchAllRows,
   } = useTableData<LaporanTambat>({
     table: "laporan_tambat",
     columns: "*",
@@ -191,6 +192,7 @@ export default function TambatPage() {
         onSort={handleSort}
         onRowClick={setSelected}
         exportFilename="laporan-tambat"
+        fetchAllRows={fetchAllRows}
         filterSlot={
           <TableFilters
             dateFrom={dateFrom}

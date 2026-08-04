@@ -82,6 +82,7 @@ export default function OrangKeluarPage() {
     siteFilter,
     setSiteFilter,
     PAGE_SIZE,
+    fetchAllRows,
   } = useTableData<OrangKeluar>({
     table: "orang_keluar",
     columns: "*",
@@ -114,6 +115,7 @@ export default function OrangKeluarPage() {
         onSort={handleSort}
         onRowClick={setSelected}
         exportFilename="orang-keluar"
+        fetchAllRows={fetchAllRows}
         filterSlot={
           <TableFilters
             dateFrom={dateFrom}

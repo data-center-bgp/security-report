@@ -83,6 +83,7 @@ export default function SuratKeluarPage() {
     siteFilter,
     setSiteFilter,
     PAGE_SIZE,
+    fetchAllRows,
   } = useTableData<SuratKeluar>({
     table: "surat_keluar",
     columns: "*",
@@ -121,6 +122,7 @@ export default function SuratKeluarPage() {
         onSort={handleSort}
         onRowClick={setSelected}
         exportFilename="surat-keluar"
+        fetchAllRows={fetchAllRows}
         filterSlot={
           <TableFilters
             dateFrom={dateFrom}

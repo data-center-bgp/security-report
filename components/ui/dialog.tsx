@@ -8,6 +8,15 @@ interface DialogProps {
 }
 
 function Dialog({ open, onOpenChange, children }: DialogProps) {
+  React.useEffect(() => {
+    if (!open) return;
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape") onOpenChange?.(false);
+    }
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [open, onOpenChange]);
+
   if (!open) return null;
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
@@ -23,18 +32,30 @@ function Dialog({ open, onOpenChange, children }: DialogProps) {
 const DialogContent = React.forwardRef<
   HTMLDivElement,
   React.HTMLAttributes<HTMLDivElement>
->(({ className, children, ...props }, ref) => (
-  <div
-    ref={ref}
-    className={cn(
-      "bg-background rounded-lg shadow-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto",
-      className,
-    )}
-    {...props}
-  >
-    {children}
-  </div>
-));
+>(({ className, children, ...props }, ref) => {
+  const innerRef = React.useRef<HTMLDivElement>(null);
+  React.useImperativeHandle(ref, () => innerRef.current as HTMLDivElement);
+
+  React.useEffect(() => {
+    innerRef.current?.focus();
+  }, []);
+
+  return (
+    <div
+      ref={innerRef}
+      role="dialog"
+      aria-modal="true"
+      tabIndex={-1}
+      className={cn(
+        "bg-background rounded-lg shadow-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto focus:outline-none",
+        className,
+      )}
+      {...props}
+    >
+      {children}
+    </div>
+  );
+});
 DialogContent.displayName = "DialogContent";
 
 const DialogHeader = ({
